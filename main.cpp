@@ -9,6 +9,7 @@ struct FILE_NODE
         {
             name = filename;
             fileMap[".."] = parent;
+            fileMap["."] = this;
 
         }
         std::string getName()
@@ -29,6 +30,23 @@ struct FILE_NODE
 
             directory.insert(0, "/" + currentNode->name);
             return directory;
+        } 
+
+        std::string getLocalDirectory()
+        { 
+            std::string localDirectory;
+            std::map<std::string, FILE_NODE *>::iterator it = fileMap.begin();   
+
+            while (it != fileMap.end())
+            {
+                if(it->first != ".." && it->first != ".")
+                {
+                    localDirectory.append((it->second)->name + "  ");
+                }
+               
+                it++;
+            }
+            return localDirectory;
         }
 
         FILE_NODE *getInstance( std::string name)
@@ -47,9 +65,8 @@ struct FILE_NODE
 
         bool deleteItem(std::string name)
         {
-            delete this->getInstance(name);
+            delete fileMap[name];
             fileMap.erase(name);
-            std::cout <<; 
             return true;
         }
     private:
@@ -67,8 +84,9 @@ int main()
     FILE_NODE Test("test", &Desktop);
     FILE_NODE Nudes("nudes", &Test);
     std::cout << Nudes.getDirectory() << std::endl;
+    std::cout << Test.getLocalDirectory() << std::endl;
     Test.deleteItem("nudes");
-    std::cout << Nudes.getDirectory() << std::endl;
+    std::cout << Test.getLocalDirectory() << std::endl;
 
 
 }
