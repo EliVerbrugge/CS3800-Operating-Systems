@@ -3,26 +3,40 @@
 #include <exception>
 #include <vector>
 #include <algorithm>
-class invalidfilename: public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "'..' or '.' are not valid filenames";
-  }
-} invalfilename;
-
+#include <sstream>
+#include <ctime>
+#include <time.h> 
 
 struct FILE_NODE
 {
     public:
         std::map<std::string, FILE_NODE *> fileMap;
-        FILE_NODE(std::string filename, FILE_NODE * parent)
+        FILE_NODE(std::string filename, FILE_NODE * parent, bool isdir)
         {
+
             name = filename;
             fileMap[".."] = parent;
             fileMap["."] = this;
-
+            isDir = isdir;
+            time_t my_time = time(NULL); 
+            timestamp = ctime(&my_time);
         }
+
+        ~FILE_NODE()
+        {
+            std::map<std::string, FILE_NODE *>::iterator it = fileMap.begin();   
+
+            while (it != fileMap.end())
+            {
+                if(it->first != ".." && it->first != ".")
+                {
+                    delete it->second;
+                }
+               
+                it++;
+            }
+        }
+
         std::string getName()
         {
             return name;
@@ -74,40 +88,74 @@ struct FILE_NODE
             return NULL;
         }
 
-        FILE_NODE *createInstance( std::string name)
+        FILE_NODE *createInstance( std::string name, bool isdir)
         {
             if(name == ".." || name == ".")
             {
-                throw invalfilename;
+                std::cout << "'..' or '.' are not valid filenames" << std::endl;
                 return NULL;
             }
-            FILE_NODE *instance = new FILE_NODE(name, this);
+            FILE_NODE *instance = new FILE_NODE(name, this, isdir);
             fileMap[name] = instance;
+
             return instance;
         }
 
-        bool deleteItem(std::string name)
+        FILE_NODE *updateTimeStamp()
+        {
+            time_t my_time = time(NULL); 
+            timestamp = ctime(&my_time);
+            return this;
+        }
+
+        std::string getTimestamp()
+        {
+            return timestamp;
+        }
+
+        bool isDirectory()
+        {
+            return isDir;
+        }
+
+        void deleteItem(std::string name)
         {
             delete fileMap[name];
             fileMap.erase(name);
-            return true;
         }
+
     private:
         std::string name;
         bool isDir;
+        std::string timestamp;
 };
 
 struct FILE_SYSTEM
 {
     FILE_NODE *currentFile;
+
     FILE_SYSTEM()
     {
-        currentFile = new FILE_NODE("root", NULL);
+        currentFile = new FILE_NODE("root", NULL, true);
     }
+
+    ~FILE_SYSTEM()
+    {
+        delete currentFile;
+    }
+
 
     void traverse(std::string name)
     {
-        currentFile = currentFile->getInstance(name);
+        if( currentFile->getInstance(name) != NULL
+         && currentFile->getInstance(name)->isDirectory() )
+        {
+            currentFile = currentFile->getInstance(name);
+        }
+        else
+        {
+            std::cout << "cd: " << name << ": Not a directory" << std::endl;
+        }
     }
 
     std::string workingDirectory()
@@ -120,35 +168,51 @@ struct FILE_SYSTEM
         return currentFile->getLocalDirectory();
     }
 
-    FILE_NODE *addNode(std::string name)
+    FILE_NODE *addNode(std::string name, bool isDir)
     {
-        return currentFile->createInstance(name);
+        if( currentFile->getInstance(name) == NULL )
+        {
+            return currentFile->createInstance(name, isDir);
+        }
+        else
+        {
+            return currentFile->getInstance(name)->updateTimeStamp();
+        }
+    }
+
+    void deleteNode(std::string name, bool deleteDir)
+    {
+        if( currentFile->getInstance(name)->isDirectory() && deleteDir
+         || !currentFile->getInstance(name)->isDirectory() && !deleteDir )
+        {
+            currentFile->deleteItem(name);
+        }
     }
 
 };
 
-
-std::vector<std::string> split(std::string &s, std::string delim) {
+std::vector<std::string> split(std::string str) 
+{ 
+    std::istringstream ss(str); 
     std::vector<std::string> commands;
-    std::string command;
-    size_t pos;
-    while ((pos = s.find(delim)) != std::string::npos) 
-    {
-            command = s.substr(0, pos);
-            commands.push_back(command);
-            s.erase(0, pos + delim.length());
-    }
-    return commands;
-}
 
-void handleCommands(int argc, char *argv[])
+    do { 
+        std::string word; 
+        ss >> word; 
+        if(word != "")
+            commands.push_back(word);
+  
+    } while (ss); 
+    return commands;
+} 
+
+void handleCommands()
 {
     /***********************************************
     Declaring Local Variables
     ***********************************************/
     FILE_SYSTEM files;
     bool quit;
-    ptrdiff_t index;
     std::vector<std::string> commands;
     std::string command;
     std::string input;
@@ -156,35 +220,62 @@ void handleCommands(int argc, char *argv[])
     /***********************************************
     Iniatilizing Local Variables
     ***********************************************/
-    std::vector<std::string> mylist{"pwd", "cd", "ls"};
     quit = false;
-    index = -1;
     
-    
-    std::cout << files.workingDirectory() << std::endl;
-    files.addNode("Desktop");
-    files.traverse("Desktop");
-    std::cout << files.workingDirectory() << std::endl;
-
     do
     {   
+        std::cout << "root@user$ ";
         std::getline(std::cin, input);
-        if(input == "pwd")
+        commands = split(input);
+        command = commands[0];
+        if(command == "pwd")
         {
             std::cout << files.workingDirectory() << std::endl;
         }
-        else
+        else if( command == "ls" )
         {
-            commands = split(input, " ");
-            for (std::vector<std::string>::const_iterator i = commands.begin(); i != commands.end(); ++i)
-                std::cout << *i << ' ';
-            
-            std::cout << "got here" << std::endl;
-                    std::cout << commands.size() << std::endl;
-
-            command = commands.at(0);
-            //index = std::find(mylist.begin(), mylist.end(), "a") - mylist.end();
-            std::cout << "got here" << std::endl;
+            std::cout << files.listLocalNodes() << std::endl;
+        }
+        else if( command == "touch")
+        {
+            if(commands.size() > 1)
+            {
+                files.addNode(commands[1], false);
+            }
+        }
+        else if( command == "mkdir")
+        {
+            if(commands.size() > 1)
+            {
+                files.addNode(commands[1], true);
+            }
+        }
+        else if( command == "cd")
+        {
+            if(commands.size() > 1)
+            {
+                files.traverse(commands[1]);
+            }
+        }
+        else if( command == "rm")
+        {
+            if(commands.size() > 1)
+            {
+                files.deleteNode(commands[1], false);
+            }
+        }
+        else if( command == "rmdir")
+        {
+            if(commands.size() > 1)
+            {
+                files.deleteNode(commands[1], true);
+            }
+        }
+        else if( command == "quit" 
+              || command == "q"
+              || command == "exit" )
+        {
+            quit = true;
         }
         
     }while(!quit);
@@ -192,7 +283,7 @@ void handleCommands(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    handleCommands(argc, argv);
+    handleCommands();
 
     return 0;
 }
