@@ -44,6 +44,10 @@ struct FILE_SYSTEM
 	{
 	   currentFile->getInstance(name)->changeUserPermission(permission);
 	}
+	else
+	{
+	   std::cout << "chmod: " << name << ": Not found" << std::endl;
+	}
     }
 
     void changeGroupPerm(std::string name, uint8_t permission)
@@ -52,6 +56,10 @@ struct FILE_SYSTEM
 	{
            currentFile->getInstance(name)->changeGroupPermission(permission);
 	}
+	else
+	{
+	   std::cout << "chmod: " << name << ": Not found" << std::endl;
+	}
     }
 
     void changeWorldPerm(std::string name, uint8_t permission)
@@ -59,6 +67,10 @@ struct FILE_SYSTEM
         if( currentFile->getInstance(name) != NULL)
 	{
 	   currentFile->getInstance(name)->changeWorldPermission(permission);
+	}
+	else
+	{
+	   std::cout << "chmod: " << name << ": Not found" << std::endl;
 	}
     }
 
@@ -110,6 +122,10 @@ struct FILE_SYSTEM
                   std::cout << "rmdir: " << name << ": Not a directory" << std::endl;
                }
            }
+	}
+	else
+	{
+	   std::cout << "rmdir: " << name << ": Not found" << std::endl;
 	}
     }
 
