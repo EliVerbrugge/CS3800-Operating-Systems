@@ -9,6 +9,7 @@
 
 #include "fileSystem.h"
 
+//splits the input into words so we can actually parse commands
 std::vector<std::string> split(std::string str) 
 { 
     std::istringstream ss(str); 
@@ -24,6 +25,7 @@ std::vector<std::string> split(std::string str)
     return commands;
 } 
 
+//handles all of the various commands and tells the filesystem what to do
 void handleCommands()
 {
     /***********************************************
