@@ -40,17 +40,26 @@ struct FILE_SYSTEM
 
     void changeUserPerm(std::string name, uint8_t permission)
     {
-        currentFile->getInstance(name)->changeUserPermission(permission);
+	if( currentFile->getInstance(name) != NULL)
+	{
+	   currentFile->getInstance(name)->changeUserPermission(permission);
+	}
     }
 
     void changeGroupPerm(std::string name, uint8_t permission)
     {
-        currentFile->getInstance(name)->changeGroupPermission(permission);
+	if( currentFile->getInstance(name) != NULL)
+	{
+           currentFile->getInstance(name)->changeGroupPermission(permission);
+	}
     }
 
     void changeWorldPerm(std::string name, uint8_t permission)
     {
-        currentFile->getInstance(name)->changeWorldPermission(permission);
+        if( currentFile->getInstance(name) != NULL)
+	{
+	   currentFile->getInstance(name)->changeWorldPermission(permission);
+	}
     }
 
 
@@ -83,22 +92,25 @@ struct FILE_SYSTEM
 
     void deleteNode(std::string name, bool deleteDir)
     {
-        if( currentFile->getInstance(name)->isDirectory() && deleteDir
-         || !currentFile->getInstance(name)->isDirectory() && !deleteDir )
-        {
-            currentFile->deleteItem(name);
-        }
-        else
-        {
-            if(currentFile->getInstance(name)->isDirectory() && !deleteDir)
-            {
-                std::cout << "rm: " << name << ": Not a file" << std::endl;
-            }
-            else if(!currentFile->getInstance(name)->isDirectory() && deleteDir)
-            {
-                std::cout << "rmdir: " << name << ": Not a directory" << std::endl;
-            }
-        }
+	if( currentFile->getInstance(name) != NULL)
+	{
+           if( currentFile->getInstance(name)->isDirectory() && deleteDir
+            || !currentFile->getInstance(name)->isDirectory() && !deleteDir )
+           {
+                currentFile->deleteItem(name);
+           }
+           else
+           {
+               if(currentFile->getInstance(name)->isDirectory() && !deleteDir)
+               {
+                  std::cout << "rm: " << name << ": Not a file" << std::endl;
+               }
+               else if(!currentFile->getInstance(name)->isDirectory() && deleteDir)
+               {
+                  std::cout << "rmdir: " << name << ": Not a directory" << std::endl;
+               }
+           }
+	}
     }
 
 };
