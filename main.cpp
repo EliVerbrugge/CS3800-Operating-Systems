@@ -58,10 +58,10 @@ void handleCommands()
         {
             if(commands.size() > 1 && commands[1] == "-l")
             {
-                std::vector <std::string> output;
-                output = files.longListLocalNodes();
+                std::vector <std::string> longListOutput;
+                longListOutput = files.longListLocalNodes();
                 
-                for (std::vector<std::string>::const_iterator i = output.begin(); i != output.end(); ++i)
+                for (std::vector<std::string>::const_iterator i = longListOutput.begin(); i != longListOutput.end(); ++i)
                     std::cout << *i << std::endl;
             }
             else
@@ -126,7 +126,6 @@ void handleCommands()
 int main(int argc, char *argv[])
 {
     handleCommands();
-
     return 0;
 }
 
