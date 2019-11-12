@@ -4,18 +4,26 @@
 //EEPROM library written for the Mars Rover Design Team
 #include "RoveEEPROM.h"
 
-// A node of N-ary tree 
+#define MAX_FILES_PER_LEVEL 10
+#define END_OF_LEVEL ')'
+#define FILE_END '%'
+#define FOLDER_END '&'
+
+RoveEEPROM EEPROM;
+
+// A node of the tree
 struct Node { 
-   char key; 
-   Node *child[N];  // An array of pointers for N children 
+   String key; 
+   bool isFolder;
+   Node *child[MAX_FILES_PER_LEVEL];  // An array of pointers for N children 
 };
 
 // A utility function to create a new N-ary tree node 
-Node *newNode(char key) 
+Node *newNode(String key) 
 { 
     Node *temp = new Node; 
     temp->key = key; 
-    for (int i = 0; i < N; i++) 
+    for (int i = 0; i < MAX_FILES_PER_LEVEL; i++) 
         temp->child[i] = NULL; 
     return temp; 
 } 
@@ -30,9 +38,10 @@ class PersistentFiles
     public:
         void serialize(Node *root); 
         int deSerialize(Node *&root); 
-
+        void resetFiles();
 
     private:
+        int index;
 };
 
 
