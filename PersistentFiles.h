@@ -1,15 +1,11 @@
 #ifndef PERSISTENT_FILES_H
 #define PERSISTENT_FILES_h
-
-//EEPROM library written for the Mars Rover Design Team
-#include "RoveEEPROM.h"
+#include "Energia.h"
 
 #define MAX_FILES_PER_LEVEL 10
 #define END_OF_LEVEL ')'
 #define FILE_END '%'
 #define FOLDER_END '&'
-
-RoveEEPROM EEPROM;
 
 // A node of the tree
 struct Node { 
@@ -19,14 +15,7 @@ struct Node {
 };
 
 // A utility function to create a new N-ary tree node 
-Node *newNode(String key) 
-{ 
-    Node *temp = new Node; 
-    temp->key = key; 
-    for (int i = 0; i < MAX_FILES_PER_LEVEL; i++) 
-        temp->child[i] = NULL; 
-    return temp; 
-} 
+Node *newNode(String key, bool folder); 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //The purpose is to store the file structure to persistent memory at the end of emulation,
@@ -39,11 +28,13 @@ class PersistentFiles
         void serialize(Node *root); 
         int deSerialize(Node *&root); 
         void resetFiles();
+        void resetIndex();
 
     private:
         int index;
 };
 
+#endif
 
 
 
