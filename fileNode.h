@@ -1,17 +1,22 @@
+#ifndef FILE_NODE_H
+#define FILE_NODE_H
+
 #include "Energia.h"
 
-struct PAIR
-{
-    String first; 
-    FILE_NODE second;
-};
+template <typename T> 
+struct PAIR { 
+   String first; 
+   T second;
+}; 
 
 struct FILE_NODE
 {
     public:
         //make an array of pairs (string identifier and node) that is the size
         //of our limit per level + 1 for the parent
-        PAIR fileArray[Max_num_files+1] = ;
+        static const uint8_t MAX_NUM_FILES = 10;
+
+        PAIR<FILE_NODE*> fileArray[MAX_NUM_FILES+1];
 
         //construcutor: will assign a name, and timestamp to a node
         FILE_NODE(String filename, FILE_NODE * parent, bool isdir)
@@ -19,15 +24,15 @@ struct FILE_NODE
 
             name = filename;
 
-            PAIR parentNode = new PAIR();
-            parentNode->first = parent->name;
-            parentNode->second = parent;
+            PAIR<FILE_NODE*> parentNode;
+            parentNode.first = "..";
+            parentNode.second = parent;
             fileArray[0] = parentNode;
             currentIndex++;
 
-            PAIR thisNode = new PAIR();
-            thisNode->first = this->name;
-            parentNode->second = this;
+            PAIR<FILE_NODE*> thisNode;
+            thisNode.first = ".";
+            thisNode.second = this;
             fileArray[1] = thisNode;
             currentIndex++;
 
@@ -41,10 +46,10 @@ struct FILE_NODE
         {
             for(int i = 0; i < currentIndex; i++)
             {
-                PAIR *it = fileArray[i];
-                if(it->first != ".." && it->first != ".")
+                PAIR<FILE_NODE*> it = fileArray[i];
+                if(it.first != ".." && it.first != ".")
                 {
-                    delete it->second;
+                    delete it.second;
                 }
             }
         }
@@ -117,10 +122,10 @@ struct FILE_NODE
             String localDirectory;
             for(int i = 0; i < currentIndex; i++)
             {
-                PAIR *it = fileArray[i];
-                if(it->first != ".." && it->first != ".")
+                PAIR<FILE_NODE*> it = fileArray[i];
+                if(it.first != ".." && it.first != ".")
                 {
-                    localDirectory += ((it->second)->name + "  ");
+                    localDirectory += ((it.second)->name + "  ");
                 }
             }
             return localDirectory;
@@ -129,13 +134,13 @@ struct FILE_NODE
         //prints all child nodes with the expected format for ls -l
        String* getLocalDirectoryLong()
         { 
-            String* longList = new String[Max_num_files]
+            String* longList = new String[MAX_NUM_FILES];
             for(int i = 1; i < currentIndex; i++)
             {
-                PAIR *it = fileArray[i];
-                if(it->first != "..")
+                PAIR<FILE_NODE*> it = fileArray[i];
+                if(it.first != "..")
                 {
-                   longList[i] = (it->second)->formatLongList();
+                   longList[i] = (it.second)->formatLongList();
                 }
             }
             return longList;
@@ -146,10 +151,10 @@ struct FILE_NODE
         {
             for(int i = 1; i < currentIndex; i++)
             {
-                PAIR *it = fileArray[i];
-                if(it->first == name)
+                PAIR<FILE_NODE*> it = fileArray[i];
+                if(it.first == name)
                 {
-                    return it->second;
+                    return it.second;
                 }
             }
             return NULL;
@@ -165,7 +170,12 @@ struct FILE_NODE
                 return NULL;
             }
             FILE_NODE *instance = new FILE_NODE(name, this, isdir);
-            fileMap[currentIndex] = instance;
+
+            PAIR<FILE_NODE*> newNode;
+            newNode.first = name;
+            newNode.second = instance;
+
+            fileArray[currentIndex] = newNode;
             currentIndex++;
             return instance;
         }
@@ -173,14 +183,8 @@ struct FILE_NODE
         //grabs the machine local time and formats it
         FILE_NODE *updateTimeStamp()
         {
-            char dt_string[100];
-            time_t curr_time;
-	        tm * curr_tm;
 
-            time(&curr_time);
-            curr_tm = localtime(&curr_time);
-            strftime(dt_string, 50, "%B %d %R", curr_tm);
-            timestamp = String(dt_string);
+            timestamp = "Thursday. Nov 19 05:17:46";
             return this;
         }
 
@@ -197,10 +201,10 @@ struct FILE_NODE
            int i;
            for(i = 1; i < currentIndex; i++)
             {
-                PAIR *it = fileArray[i];
-                if(it->first == name)
+                PAIR<FILE_NODE*> it = fileArray[i];
+                if(it.first == name)
                 {
-                    delete it->second;
+                    delete it.second;
                     break;
                 }
             }
@@ -288,7 +292,6 @@ struct FILE_NODE
 
     private:
         String name;
-        uint8_t Max_num_files = 10;
         uint8_t currentIndex = 0;
         bool isDir;
         String timestamp;
@@ -301,3 +304,4 @@ struct FILE_NODE
         String group = "root";
 
 };
+#endif

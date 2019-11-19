@@ -9,6 +9,11 @@ struct FILE_SYSTEM
         currentFile = new FILE_NODE("root", NULL, true);
     }
 
+    FILE_SYSTEM(FILE_NODE* file)
+    {
+        currentFile = file;
+    }
+
     ~FILE_SYSTEM()
     {
         delete currentFile;
@@ -81,9 +86,10 @@ struct FILE_SYSTEM
 
     //prints attributes of all child nodes of node we are currently at
     //mimics ls -l output
-    std::vector <String> longListLocalNodes()
+    String* longListLocalNodes()
     {
-        return currentFile->getLocalDirectoryLong();
+        String *list = currentFile->getLocalDirectoryLong();
+        return list;
     }
 
     //adds a node with name as a child to current node
@@ -98,6 +104,11 @@ struct FILE_SYSTEM
         {
             return currentFile->getInstance(name)->updateTimeStamp();
         }
+    }
+    
+    FILE_NODE *getCurrentNode()
+    {
+        return currentFile;
     }
 
     //deletes a node with name which is a child to current node

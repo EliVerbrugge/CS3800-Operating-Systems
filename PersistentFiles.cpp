@@ -3,15 +3,6 @@
 
 RoveEEPROM EEPROM;
 
-Node *newNode(String key, bool folder)
-{ 
-    Node *temp = new Node; 
-    temp->isFolder = folder;
-    temp->key = key; 
-    for (int i = 0; i < MAX_FILES_PER_LEVEL; i++) 
-        temp->child[i] = NULL; 
-    return temp; 
-} 
 
 void PersistentFiles::resetFiles()
 {
@@ -32,20 +23,20 @@ void PersistentFiles::resetIndex()
 }
 
 // This function stores the given N-ary tree in persistent memory
-void PersistentFiles::serialize(Node *root) 
+void PersistentFiles::serialize(FILE_NODE *root) 
 { 
     // Base case 
     if (root == NULL) return; 
   
     // Else, store current node and recur for its children 
-    Serial.println("Serializing: " + root->key + " at: " + index);
-    for(int j = 0; j < (root->key).length(); j++)
+    Serial.println("Serializing: " + root->getName() + " at: " + index);
+    for(int j = 0; j < (root->getName()).length(); j++)
     {
-        EEPROM.write(index, (root->key)[j]);
+        EEPROM.write(index, (root->getName())[j]);
         index++;
     }
 
-    if(root->isFolder)
+    if(root->isDirectory())
     {
         EEPROM.write(index, FOLDER_END);
         index++;
@@ -57,20 +48,20 @@ void PersistentFiles::serialize(Node *root)
     }
     
 
-    for (int i = 0; i < MAX_FILES_PER_LEVEL && root->child[i]; i++) 
+    for (int i = 0; i < MAX_FILES_PER_LEVEL && root->fileArray[i].second != nullptr; i++) 
     {
-         serialize(root->child[i]); 
+         serialize(root->fileArray[i].second); 
     }
   
     // Store marker at the end of children 
-    Serial.println("End of level for: " + root->key + " at: " + index);
+    Serial.println("End of level for: " + root->getName() + " at: " + index);
     EEPROM.write(index, END_OF_LEVEL);
     index++;
 } 
 
 // This functionr returns 0 to indicate that the next item is a valid 
 // tree key. Else returns 1 
-int PersistentFiles::deSerialize(Node *&root) 
+int PersistentFiles::deSerialize(FILE_NODE *&root) 
 { 
     char val; 
     String key;
@@ -94,12 +85,12 @@ int PersistentFiles::deSerialize(Node *&root)
     }
     
     Serial.println(key);
-    root = newNode(key, isFolder); 
+    root = new FILE_NODE(key, root, isFolder); 
     for (int i = 0; i < MAX_FILES_PER_LEVEL; i++) 
     {
-      if (deSerialize(root->child[i])) 
+      if (root->fileArray->first != ".." && root->fileArray->first != "." && deSerialize(root->fileArray[i].second)) 
       {
-          Serial.println("Breaking");
+         Serial.println("Breaking");
          break; 
       }
     }
