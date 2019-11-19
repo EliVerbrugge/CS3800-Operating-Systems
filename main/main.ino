@@ -15,7 +15,7 @@ void setup()
         Serial.println("");
 
         FILE_NODE *root = filesys.getCurrentNode();
-
+        
         filesys.addNode("Corn", true);
         filesys.addNode("Help.txt", false);
         filesys.addNode("Me.png", false);

@@ -25,8 +25,13 @@ void PersistentFiles::resetIndex()
 // This function stores the given N-ary tree in persistent memory
 void PersistentFiles::serialize(FILE_NODE *root) 
 { 
+    Serial.println("Serializing node");
     // Base case 
-    if (root == NULL) return; 
+    if (root == NULL)
+    {
+        Serial.println("It's null");
+        return; 
+    }
   
     // Else, store current node and recur for its children 
     Serial.println("Serializing: " + root->getName() + " at: " + index);
@@ -48,15 +53,17 @@ void PersistentFiles::serialize(FILE_NODE *root)
     }
     
 
-    for (int i = 0; i < MAX_FILES_PER_LEVEL && root->fileArray[i].second != nullptr; i++) 
+    for (int i = 2; i < MAX_FILES_PER_LEVEL && root->fileArray[i].second != NULL; i++) 
     {
-         serialize(root->fileArray[i].second); 
+        Serial.println("Serializing childern");
+        serialize(root->fileArray[i].second); 
     }
   
     // Store marker at the end of children 
     Serial.println("End of level for: " + root->getName() + " at: " + index);
     EEPROM.write(index, END_OF_LEVEL);
     index++;
+    return;
 } 
 
 // This functionr returns 0 to indicate that the next item is a valid 

@@ -36,6 +36,14 @@ struct FILE_NODE
             fileArray[1] = thisNode;
             currentIndex++;
 
+            for(int i = 2; i < MAX_NUM_FILES; i++)
+            {
+                PAIR<FILE_NODE*> temp;
+                temp.first = "";
+                temp.second = NULL;
+                fileArray[i] = temp;
+            }
+
             isDir = isdir;
 
             //hardcoding the timestamp for now, we can't get an accurate one in any case.
