@@ -16,6 +16,8 @@ struct FILE_NODE
         //of our limit per level + 1 for the parent
         static const uint8_t MAX_NUM_FILES = 10;
 
+        int currentIndex;
+
         PAIR<FILE_NODE*> fileArray[MAX_NUM_FILES+1];
 
         //construcutor: will assign a name, and timestamp to a node
@@ -23,18 +25,19 @@ struct FILE_NODE
         {
 
             name = filename;
+            currentIndex = 0;
 
             PAIR<FILE_NODE*> parentNode;
             parentNode.first = "..";
             parentNode.second = parent;
             fileArray[0] = parentNode;
-            currentIndex++;
+            currentIndex+=1;
 
             PAIR<FILE_NODE*> thisNode;
             thisNode.first = ".";
             thisNode.second = this;
             fileArray[1] = thisNode;
-            currentIndex++;
+            currentIndex+=1;
 
             for(int i = 2; i < MAX_NUM_FILES; i++)
             {
@@ -48,6 +51,8 @@ struct FILE_NODE
 
             //hardcoding the timestamp for now, we can't get an accurate one in any case.
             timestamp = "Wed. Nov 18 18:58:00";
+            //Serial.println("Current index is : ");
+            //Serial.println(currentIndex);
         }
 
         ~FILE_NODE()
@@ -128,12 +133,14 @@ struct FILE_NODE
         String getLocalDirectory()
         { 
             String localDirectory;
+            String folderAppend;
             for(int i = 0; i < currentIndex; i++)
             {
                 PAIR<FILE_NODE*> it = fileArray[i];
                 if(it.first != ".." && it.first != ".")
                 {
-                    localDirectory += ((it.second)->name + "  ");
+                    folderAppend = it.second->isDir ? "/ " : " ";
+                    localDirectory += ((it.second)->name + folderAppend + "\n");
                 }
             }
             return localDirectory;
@@ -157,7 +164,7 @@ struct FILE_NODE
         //checks if the current node has a direct association with the request node
         FILE_NODE *getInstance( String name)
         {
-            for(int i = 1; i < currentIndex; i++)
+            for(int i = 0; i < currentIndex; i++)
             {
                 PAIR<FILE_NODE*> it = fileArray[i];
                 if(it.first == name)
@@ -177,14 +184,29 @@ struct FILE_NODE
                 Serial.println("'..' or '.' are not valid filenames");
                 return NULL;
             }
+            else if(name.indexOf("&") != -1
+                  ||name.indexOf("%") != -1
+                  ||name.indexOf(")") != -1)
+             {
+                Serial.println("'&' or '%' or ')' are not valid in filenames");
+                return NULL;
+             }
+            else if(currentIndex >= MAX_NUM_FILES)
+            {
+                Serial.println("Max number of files for this level hit");
+                return NULL;
+            }
+            //Serial.println("Creating new node");
             FILE_NODE *instance = new FILE_NODE(name, this, isdir);
-
+        
+            //Serial.println("Done Creating new node");
             PAIR<FILE_NODE*> newNode;
             newNode.first = name;
             newNode.second = instance;
 
             fileArray[currentIndex] = newNode;
-            currentIndex++;
+            currentIndex+=1;
+            //Serial.println("returning");
             return instance;
         }
 
@@ -219,7 +241,7 @@ struct FILE_NODE
 
             if (i < currentIndex) 
             { 
-                currentIndex--;
+                currentIndex-=1;
                 for (int j=i; j<currentIndex; j++) 
                     fileArray[j] = fileArray[j+1]; 
             } 
@@ -300,7 +322,6 @@ struct FILE_NODE
 
     private:
         String name;
-        uint8_t currentIndex = 0;
         bool isDir;
         String timestamp;
 
