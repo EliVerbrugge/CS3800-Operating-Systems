@@ -4,6 +4,7 @@ String command;
 String commands[3];
 FILE_SYSTEM filesys;
 PersistentFiles PersistentFileStorage;
+uint32_t timer;
 
 void setup()
     {   
@@ -16,46 +17,7 @@ void setup()
         Serial.println("#   \\__/\\  //_______  /|_______ \\______  /\\_______  /\\____|__  /_______  /     #");  
         Serial.println("#        \\/         \\/         \\/      \\/         \\/         \\/        \\/      #");  
         Serial.println("");
-        /*
-        filesys.addNode("Pictures", true);
-        filesys.addNode("Documents", true);
-        filesys.addNode("Help.txt", false);
-        filesys.addNode("Me.png", false);
-
-
-        filesys.displayUsers();
-        filesys.traverse("Pictures");
-        filesys.traverse("..");
-        String test = filesys.listLocalNodes();
-        Serial.println(test);
-        */
-
-        /*
-        filesys.traverse("Corn");
-        filesys.addNode("Word.doc", true);
-        filesys.addNode("Prezzi.pptx", true);
-        test = filesys.listLocalNodes();
-
-        Serial.println(test);
-        
-        Serial.println("Resetting files");
-        PersistentFileStorage.resetFiles();
-
-        Serial.println("Serializing tree");
-        PersistentFileStorage.serialize(root);
-
-        Serial.println("Deserializing tree");
-        FILE_NODE *node1 = new FILE_NODE("root", NULL, true);
-        PersistentFileStorage.resetIndex();
-        PersistentFileStorage.deSerialize(node1);
-        //filesys = FILE_SYSTEM(node1);
-        Serial.println(node1->getLocalDirectory());
-        node1 = node1->getInstance("root");
-        filesys.switchTo(node1);
-        Serial.println(filesys.listLocalNodes());
-        
-        Serial.println("Done");
-        */
+        timer = millis();
     }
 
 void loop()
@@ -85,7 +47,19 @@ void loop()
 
         //get rid of those pesky return characters
         commands[0].replace("\r", "");
+        
+        if (timer > millis())
+        {
+            timer = millis();
+        }
 
+        if (millis() - timer > 1000) 
+        {
+            timer = millis(); 
+            filesys.updateTick();
+        }
+        
+    
         if (commands[0].length() > 0) 
         {   
             //print out the full command string properly
@@ -154,6 +128,18 @@ void loop()
             else if(commands[0] == "chuser")
             {
                 filesys.switchUser(commands[1]);
+            }
+            else if(commands[0] == "run")
+            {
+                filesys.addProcess(commands[1]);
+            }
+            else if(commands[0] == "kill")
+            {
+                filesys.deleteProcess(commands[1]);
+            }
+             else if(commands[0] == "ps")
+            {
+                filesys.displayRunningProcesses();
             }
             else if(commands[0] == "save")
             {
