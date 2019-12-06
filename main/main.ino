@@ -65,7 +65,7 @@ void loop()
             //print out the full command string properly
             if(commands[2] != "")
             {
-                Serial.println(filesys.getCurrentUser()->username + "@USER ~ " + commands[0] + " " + commands[1]);
+                Serial.println(filesys.getCurrentUser()->username + "@USER ~ " + commands[0] + " " + commands[1] + commands[2]);
             }
             else if(commands[1] != "")
             {
@@ -119,7 +119,7 @@ void loop()
             }
             else if(commands[0] == "useradd")
             {
-                filesys.addUser(commands[1]);
+                filesys.addUser(commands[1], commands[2][0], commands[2][1], commands[2][2]);
             }
             else if(commands[0] == "userdel")
             {

@@ -32,17 +32,19 @@ struct PROCESS
 struct USER
 {
     String username;
-    uint8_t dirPermission;
-    uint8_t filePermission;
+    bool dirPermission;
+    bool filePermission;
+    bool execPermission;
     USER()
     {
         username = "invalid_user";
     }
-    USER(String name, uint8_t dir, uint8_t file)
+    USER(String name, bool dir, bool file, bool exec)
     {
         username = name;
         dirPermission = dir;
         filePermission = file;
+        execPermission = exec;
     }
 };
 
@@ -59,7 +61,7 @@ struct FILE_SYSTEM
     FILE_SYSTEM()
     {
         currentFile = new FILE_NODE("root", NULL, true);
-        userArray[numUsers] = new USER("verbruggeeli", 7, 7);
+        userArray[numUsers] = new USER("verbruggeeli", true, true);
         numUsers++;
     }
 
@@ -164,7 +166,7 @@ struct FILE_SYSTEM
     {
         if( currentFile->getInstance(name) != NULL
          && currentFile->getInstance(name)->isDirectory()
-         && userArray[currUser]->dirPermission & 0b100 )
+         && userArray[currUser]->dirPermission)
         {
             currentFile = currentFile->getInstance(name);
         }
@@ -184,12 +186,15 @@ struct FILE_SYSTEM
         for(int i = 0; i < numUsers; i++)
         {
             Serial.println("-" + userArray[i]->username);
+            Serial.println("Directory Permissions: " + userArray[i]->dirPermission);
+            Serial.println("File Permissions: " + userArray[i]->filePermission);
+            Serial.println("Execution Permissions: " + userArray[i]->execPermission);
         }
     }
 
-    void addUser(String name )
+    void addUser(String name, bool dir, bool file, bool exec, )
     {
-        userArray[numUsers] = new USER(name, 7, 3);
+        userArray[numUsers] = new USER(name, dir, file, exec);
         numUsers++;
         return;
     }
