@@ -1,11 +1,18 @@
 #include "fileNode.h"
 
+struct HISTORY
+{
+    String processName;
+    int timeSlice;
+};
+
 struct PROCESS
 {
     String processName;
     uint8_t duration;
     uint8_t startTime;
     uint8_t scheduledTime;
+
     PROCESS()
     {
         processName = "invalid_process";
@@ -20,7 +27,7 @@ struct PROCESS
         startTime = millis()/1000;
         scheduledTime = 0;
     }
-}
+};
 
 struct USER
 {
@@ -43,11 +50,12 @@ struct FILE_SYSTEM
 {
     FILE_NODE *currentFile;
     USER *userArray[10];
-    PROCESS *processArray[20];
+    PROCESS *processArray[10];
     PROCESS* runningProcess;
     uint8_t numUsers = 0;
     uint8_t currUser = 0;
-    uint8_t currProcess = -1;
+    uint8_t numProcesses = 0;
+    int8_t currProcess = -1;
     FILE_SYSTEM()
     {
         currentFile = new FILE_NODE("root", NULL, true);
@@ -65,12 +73,12 @@ struct FILE_SYSTEM
         if(currProcess == -1)
         {
             uint8_t min = 1000;
-            for(int i = 0; i < 20; i++)
+            for(int i = 0; i < 10; i++)
             {
-                if(processArray[i]->processName != "invalid_process" && processArray[i]->duration < min)
+                if(processArray[i] != NULL && processArray[i]->processName != "invalid_process" && processArray[i]->duration < min)
                 {
                     currProcess = i;
-                    min = processArray[i]->duration
+                    min = processArray[i]->duration;
                 }
             }
             if(currProcess == -1)
@@ -79,39 +87,69 @@ struct FILE_SYSTEM
             }     
         }
 
-        processArray[i]->scheduledTime += 1;
+        processArray[currProcess]->scheduledTime += 1;
 
-        if(processArray[i]->duration - processArray[i]->scheduledTime == 0)
+        if(processArray[currProcess]->duration - processArray[currProcess]->scheduledTime <= 0)
         {
-            currProcess == -1
+            deleteProcess(processArray[currProcess]->processName);
+        }
+    }
+    
+    void displayRunningProcesses()
+    {
+        Serial.println("Process Name: \t Start Time: \t Schedule Time: \t Time Required:");
+        for(int i = 0; i < 10; i++)
+        {
+            if(numProcesses <= 0)
+            {
+                return;
+            }
+            else if(processArray[i] != NULL && processArray[i]->processName != "invalid_process")
+            {
+                Serial.println(processArray[i]->processName + "\t\t" + processArray[i]->startTime + "\t\t" + processArray[i]->scheduledTime +
+                 "\t\t" + processArray[i]->duration);
+            }
+            else
+            {
+                return;
+            }
         }
     }
 
     void addProcess(String name )
     {
-        userArray[numUsers] = new USER(name, 7, 3);
-        numUsers++;
+        processArray[numProcesses] = new PROCESS(name);
+        numProcesses++;
         return;
     }
 
-    void deleteUser(String name )
+     void deleteProcess(String name )
     {
         int i;
-        for(i = 1; i < numUsers; i++)
+        for(i = 0; i < numProcesses; i++)
         {
-            if(userArray[i]->username == name)
+            if(processArray[i]->processName == name)
             {
-                delete userArray[i];
+                delete processArray[i];
                 break;
             }
         }
 
-        if (i < numUsers) 
+        if(i == currProcess)
+        {
+            currProcess = -1;
+        }
+
+        if (i < numProcesses) 
         { 
-            numUsers-=1;
-            for (int j=i; j<numUsers; j++) 
-                userArray[j] = userArray[j+1]; 
+            numProcesses-=1;
+            for (int j=i; j<numProcesses; j++) 
+            {
+                processArray[j] = processArray[j+1]; 
+                processArray[j+1] = NULL;
+            }
         } 
+        
         return;
     }
 
@@ -130,7 +168,8 @@ struct FILE_SYSTEM
         {
             currentFile = currentFile->getInstance(name);
         }
-        else if(!(userArray[currUser]->dirPermission & 0b100))
+        else if( !( userArray[currUser]->dirPermission & 0b100 )
+                 && currentFile->getInstance(name)->isDirectory() )
         {
             Serial.println("You do not have permission to access this file");
         }
@@ -196,9 +235,16 @@ struct FILE_SYSTEM
     //change the user permission for node with given name
     void changeUserPerm(String name, uint8_t permission)
     {
-        if( currentFile->getInstance(name) != NULL)
+        if( currentFile->getInstance(name) != NULL
+        && ( ( currentFile->getInstance(name)->isDirectory() && userArray[currUser]->dirPermission)
+          || ( !currentFile->getInstance(name)->isDirectory() && userArray[currUser]->filePermission)
         {
             currentFile->getInstance(name)->changeUserPermission(permission);
+        }
+        else if( ( currentFile->getInstance(name)->isDirectory() && !userArray[currUser]->dirPermission)
+              || ( !currentFile->getInstance(name)->isDirectory() && !userArray[currUser]->filePermission ))
+        {
+            Serial.println("Insufficient priveleges to modify: " + name);
         }
         else
         {
@@ -209,9 +255,16 @@ struct FILE_SYSTEM
     //change the group permission for node with given name
     void changeGroupPerm(String name, uint8_t permission)
     {
-        if( currentFile->getInstance(name) != NULL)
+        if( currentFile->getInstance(name) != NULL
+        && ( ( currentFile->getInstance(name)->isDirectory() && userArray[currUser]->dirPermission)
+          || ( !currentFile->getInstance(name)->isDirectory() && userArray[currUser]->filePermission)
         {
             currentFile->getInstance(name)->changeGroupPermission(permission);
+        }
+        else if( ( currentFile->getInstance(name)->isDirectory() && !userArray[currUser]->dirPermission)
+              || ( !currentFile->getInstance(name)->isDirectory() && !userArray[currUser]->filePermission ))
+        {
+            Serial.println("Insufficient priveleges to modify: " + name);
         }
         else
         {
@@ -222,10 +275,17 @@ struct FILE_SYSTEM
     //change the group permission for node with given name
     void changeWorldPerm(String name, uint8_t permission)
     {
-        if( currentFile->getInstance(name) != NULL)
+        if( currentFile->getInstance(name) != NULL
+        && ( ( currentFile->getInstance(name)->isDirectory() && userArray[currUser]->dirPermission)
+          || ( !currentFile->getInstance(name)->isDirectory() && userArray[currUser]->filePermission)
 	    {
 	        currentFile->getInstance(name)->changeWorldPermission(permission);
 	    }   
+        else if( ( currentFile->getInstance(name)->isDirectory() && !userArray[currUser]->dirPermission)
+              || ( !currentFile->getInstance(name)->isDirectory() && !userArray[currUser]->filePermission ))
+        {
+            Serial.println("Insufficient priveleges to modify: " + name);
+        }
         else
         {
             Serial.println("chmod: " + name + ": Not found");
@@ -256,10 +316,18 @@ struct FILE_SYSTEM
     //or if a node with name exits, update the timestamp
     FILE_NODE *addNode(String name, bool isDir)
     {
-        if( currentFile->getInstance(name) == NULL )
+        if( currentFile->getInstance(name) == NULL 
+         && ( (userArray[currUser]->filePermission && !isDir)
+         || ( userArray[currUser]->dirPermission && isDir)) 
+         )
         {
             return currentFile->createInstance(name, isDir);
         }
+        else if( ( !userArray[currUser]->filePermission && !isDir)
+              || ( !userArray[currUser]->dirPermission && isDir))
+         {
+             Serial.println("Insufficient permissions to create: " + name);
+         }
         else
         {
             return currentFile->getInstance(name)->updateTimeStamp();
@@ -276,7 +344,9 @@ struct FILE_SYSTEM
     //which matches the name (folder or file)
     void deleteNode(String name, bool deleteDir)
     {
-        if( currentFile->getInstance(name) != NULL)
+        if( currentFile->getInstance(name) != NULL
+         && ( (userArray[currUser]->filePermission && !currentFile->getInstance(name)->isDirectory())
+         || ( userArray[currUser]->dirPermission && currentFile->getInstance(name)->isDirectory()) ))
         {
             if( currentFile->getInstance(name)->isDirectory() && deleteDir
                 || !currentFile->getInstance(name)->isDirectory() && !deleteDir )
@@ -295,6 +365,11 @@ struct FILE_SYSTEM
                 }
             }
         }
+        else if ( ( ( userArray[currUser]->filePermission && !currentFile->getInstance(name)->isDirectory() )
+                 || ( userArray[currUser]->dirPermission && currentFile->getInstance(name)->isDirectory() ) ) )
+            {
+                Serial.println("Insufficient permissions to delete: " + name);
+            }
         else
         {
             Serial.println("rmdir: " + name + ": Not found");
